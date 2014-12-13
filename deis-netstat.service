@@ -1,0 +1,18 @@
+[Unit]
+Description=deis-netstat
+Requires=docker.socket etcd.service
+After=docker.socket etcd.service
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStartPre=/bin/sh -c "/usr/bin/curl -s -o /run/deis-netstat.sh https://raw.githubusercontent.com/lorieri/deis-netstat/master/netstat.sh; chmod +x /run/deis-netstat.sh"
+ExecStart=/bin/sh -c "while true; do /run/deis-netstat.sh ; sleep 10 ; done"
+ExecStopPost=/bin/sh -c "rm -f /run/deis-netstat.sh"
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+Global=true

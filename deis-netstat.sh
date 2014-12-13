@@ -6,6 +6,12 @@ source /etc/environment
 # get netstat
 netstat -tpano > /tmp/netstat-paas
 
+# get macadress
+brctl showmacs docker0 |awk '{print $1 " " $3 " " $2}' |sort > /tmp/netstat-docker-macs
+
+# get veth names
+for d in `ls /sys/class/net/|grep veth`; do echo -n "$d  "; cat /sys/class/net/$d/address ; done > /tmp/netstat-veth-mac
+
 # get deis services
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services
 
@@ -16,9 +22,12 @@ do
 	etcdctl --no-sync get /deis/router/hosts/`echo $d|cut -d/ -f3`|| etcdctl --no-sync rm $d --recursive;
 done
 
+# get ntopng interfaces index
+curl -s --max-time 1 http://localhost:3000/lua/about.lua |grep set_active_interface.lua|sed 's/.*<li><a href="//'|sed 's/<\/li>//'|sed 's/">/\ /'|sed 's/<\/a>//' > /tmp/netstat-ntop-ifaces
+
 # clean files
 echo  > /tmp/netstat-paas-edges-json
-echo "{ data: { id: 'all', name : 'all' , fillcolor : 'gray' , line : '#888', color : 'white' } }," > /tmp/netstat-paas-nodes-json
+echo "{ data: { id: 'all', name : 'all' , fillcolor : 'gray' , line : '#888', color : 'white', href: '' } }," > /tmp/netstat-paas-nodes-json
 
 
 for d in `cat /tmp/netstat-services`;
@@ -37,6 +46,8 @@ do
 
 		EDGE_APP="{ data: { source: '$APP', target: '$UNIT' } },"
 
+
+		[ $IPPORT ] || continue
 		IFS=$'\n'
 		for z in `grep $IPPORT /tmp/netstat-paas|awk '{print $6}'|sort|uniq -c `;
 		do
@@ -68,6 +79,15 @@ do
 				TYPECOLOR="gray"
 			fi
 
+
+			# get veth name to link to ntopng
+			INTMAC=`docker inspect --format '{{ .NetworkSettings.MacAddress }}' $UNIT`
+			[ -n $INTMAC ] && INTMACINDEX=`grep $INTMAC /tmp/netstat-docker-macs |awk '{print $1}'`
+			[ -n $INTMACINDEX ] && EXTMAC=`grep "^$INTMACINDEX yes" /tmp/netstat-docker-macs |awk '{print $3}'`
+			[ -n $EXTMAC ] && VETH=`grep "$EXTMAC" /tmp/netstat-veth-mac |awk '{print $1}'`
+			[ -n $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
+			[ -n $VETH ] && LINKUNIT="http://$HOST:3000$SETIFACE"
+
 			# { data: { id: 'j', name: 'Jerry' } },
 			(
 				echo $EDGE_HOST;
@@ -79,11 +99,11 @@ do
 
 
 			(
-				echo "{ data: { id: '$HOST', name : '$HOST' , fillcolor : 'blue' , line : 'red', color : 'white' } },";
-				echo "{ data: { id: '$APP', name : '$APP' , fillcolor : '#00AAFF' , line : '#33CC66', color : '#ff2366' } },";
-        	                echo "{ data: { id: '$UNIT', name : '$UNIT' , fillcolor : '#33CC66' , line : '#ff2366', color : '#00AAFF' } },";
-				echo "{ data: { id: '$UNIT-$CONTYPE', name : '$CONTYPE' , fillcolor : '$TYPECOLOR' , line : '$TYPECOLOR', color : 'white' } },";
-                        	echo "{ data: { id: '$UNIT-$CONTYPE-$CONQT', name : '$CONQT' , fillcolor : '$CONCOLOR' , line : '#888', color : 'white' } },"
+				echo "{ data: { id: '$HOST', name: '$HOST', fillcolor: 'blue', line: 'red', color: 'white', href: 'http://$HOST:3000' } },";
+				echo "{ data: { id: '$APP', name: '$APP', fillcolor: '#00AAFF', line: '#33CC66', color: '#ff2366', href: '$LINKUNIT' } },";
+        	                echo "{ data: { id: '$UNIT', name: '$UNIT' , fillcolor: '#33CC66' , line: '#ff2366', color: '#00AAFF', href: '$LINKUNIT' } },";
+				echo "{ data: { id: '$UNIT-$CONTYPE', name: '$CONTYPE' , fillcolor: '$TYPECOLOR' , line: '$TYPECOLOR', color: 'white', href: '$LINKUNIT' } },";
+                        	echo "{ data: { id: '$UNIT-$CONTYPE-$CONQT', name : '$CONQT' , fillcolor : '$CONCOLOR' , line : '#888', color : 'white', href: '$LINKUNIT' } },"
 			) >> /tmp/netstat-paas-nodes-json
 
 		done

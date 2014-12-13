@@ -75,7 +75,7 @@ do
 				echo "{ data: { source: '$UNIT', target: '$UNIT-$CONTYPE'} },";
                                 echo "{ data: { source: '$UNIT-$CONTYPE', target: '$UNIT-$CONTYPE-$CONQT'} },";
 				echo "{ data: { source: '$UNIT-$CONTYPE-$CONQT', target: 'all'} },";
-			) | tee -a /tmp/netstat-paas-edges-json
+			) >> /tmp/netstat-paas-edges-json
 
 
 			(
@@ -85,7 +85,7 @@ do
 				echo "{ data: { id: '$UNIT-$CONTYPE', name : '$CONTYPE' , fillcolor : '$TYPECOLOR' , line : '$TYPECOLOR', color : 'white' } },";
                         	echo "{ data: { id: '$UNIT-$CONTYPE-$CONQT', name : '$CONQT' , fillcolor : '$CONCOLOR' , line : '#888', color : 'white' } },"
 				echo "{ data: { id: 'all', name : 'all' , fillcolor : 'gray' , line : '#888', color : 'white' } },"
-			) |tee -a /tmp/netstat-paas-nodes-json
+			) >> /tmp/netstat-paas-nodes-json
 
 		done
 	done

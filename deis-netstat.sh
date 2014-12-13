@@ -4,7 +4,7 @@
 source /etc/environment
 
 # get netstat
-netstat -tupano > /tmp/netstat-paas
+netstat -tpano > /tmp/netstat-paas
 
 # get deis services
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services

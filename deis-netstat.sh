@@ -18,7 +18,7 @@ done
 
 # clean files
 echo  > /tmp/netstat-paas-edges-json
-echo  > /tmp/netstat-paas-nodes-json
+echo "{ data: { id: 'all', name : 'all' , fillcolor : 'gray' , line : '#888', color : 'white' } }," > /tmp/netstat-paas-nodes-json
 
 
 for d in `cat /tmp/netstat-services`;
@@ -84,7 +84,6 @@ do
         	                echo "{ data: { id: '$UNIT', name : '$UNIT' , fillcolor : '#33CC66' , line : '#ff2366', color : '#00AAFF' } },";
 				echo "{ data: { id: '$UNIT-$CONTYPE', name : '$CONTYPE' , fillcolor : '$TYPECOLOR' , line : '$TYPECOLOR', color : 'white' } },";
                         	echo "{ data: { id: '$UNIT-$CONTYPE-$CONQT', name : '$CONQT' , fillcolor : '$CONCOLOR' , line : '#888', color : 'white' } },"
-				echo "{ data: { id: 'all', name : 'all' , fillcolor : 'gray' , line : '#888', color : 'white' } },"
 			) >> /tmp/netstat-paas-nodes-json
 
 		done

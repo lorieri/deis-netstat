@@ -10,8 +10,8 @@ netstat -tupano > /tmp/netstat-paas
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services
 
 # clean etcd
-etcdctl	--no-sync ls /deis-mon || etcdctl --no-sync mkdir /deis-mon
-for d in `etcdctl --no-sync ls /deis-mon/`;
+etcdctl	--no-sync ls /deis-netstat || etcdctl --no-sync mkdir /deis-netstat
+for d in `etcdctl --no-sync ls /deis-netstat/`;
 do
 	etcdctl --no-sync get /deis/router/hosts/`echo $d|cut -d/ -f3`|| etcdctl --no-sync rm $d --recursive;
 done
@@ -90,5 +90,5 @@ do
 	done
 done
 
-cat /tmp/netstat-paas-edges-json |sort|uniq| etcdctl --no-sync set /deis-mon/$HOST/edges
-cat /tmp/netstat-paas-nodes-json | etcdctl --no-sync set /deis-mon/$HOST/nodes
+cat /tmp/netstat-paas-edges-json |sort|uniq| etcdctl --no-sync set /deis-netstat/$HOST/edges
+cat /tmp/netstat-paas-nodes-json | etcdctl --no-sync set /deis-netstat/$HOST/nodes

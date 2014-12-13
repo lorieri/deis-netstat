@@ -6,8 +6,9 @@ source /etc/environment
 # get netstat
 netstat -tpano > /tmp/netstat-paas
 
-# get macadress
-brctl showmacs docker0 |awk '{print $1 " " $3 " " $2}' |sort > /tmp/netstat-docker-macs
+# get docker veth
+for d in `brctl show docker0` ; do echo $d ; done |grep veth > /tmp/netstat-docker-veth
+for d in `cat /tmp/netstat-docker-veth` ; do echo $d `cat /sys/devices/virtual/net/$d/address`; done |grep veth > /tmp/netstat-docker-veth-mac
 
 # get deis services
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services
@@ -79,11 +80,9 @@ do
 
 			# get veth name to link to ntopng
 			INTMAC=`docker inspect --format '{{ .NetworkSettings.MacAddress }}' $UNIT`
-			[ $INTMAC ] && INTMACINDEX=`grep $INTMAC /tmp/netstat-docker-macs |awk '{print $1}'`
-			[ $INTMACINDEX ] && EXTMAC=`grep "^$INTMACINDEX no" /tmp/netstat-docker-macs |awk '{print $3}'`
-			[ $EXTMAC ] && VETH=`grep "$EXTMAC" /tmp/netstat-veth-mac |awk '{print $1}'`
-			[ -n $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
-			[ -n $VETH ] && LINKUNIT="http://$HOST:3000$SETIFACE"
+			[ $INTMAC ] && VETH=`grep "$INTMAC$" /tmp/netstat-docker-veth-mac |awk '{print $2}'`
+			[ $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
+			[ $SETIFACE ] && LINKUNIT="http://$HOST:3000$SETIFACE"
 
 			# { data: { id: 'j', name: 'Jerry' } },
 			(
@@ -107,5 +106,5 @@ do
 	done
 done
 
-cat /tmp/netstat-paas-edges-json |sort|uniq| etcdctl --no-sync set /deis-netstat/$HOST/edges
-cat /tmp/netstat-paas-nodes-json | etcdctl --no-sync set /deis-netstat/$HOST/nodes
+cat /tmp/netstat-paas-edges-json |sort|uniq| etcdctl --no-sync set /deis-netstat/$HOST/edges > /dev/null
+cat /tmp/netstat-paas-nodes-json | etcdctl --no-sync set /deis-netstat/$HOST/nodes > /dev/null

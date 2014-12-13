@@ -84,8 +84,8 @@ do
 
 			# get veth name to link to ntopng
 			INTMAC=`docker inspect --format '{{ .NetworkSettings.MacAddress }}' $UNIT`
-			[ $INTMAC ] && $INTMACINDEX=`grep "$INTMAC" /tmp/netstat-docker-int-ext |awk '{print $1}'`
-			[ $INTMACINDEX ] && $EXTMAC=`grep "$INTMACINDEX yes" |awk '{print $3}'` 
+			[ $INTMAC ] && INTMACINDEX=`grep "$INTMAC" /tmp/netstat-docker-int-ext |awk '{print $1}'`
+			[ $INTMACINDEX ] && EXTMAC=`grep "$INTMACINDEX yes" /tmp/netstat-docker-int-ext |awk '{print $3}'` 
 			[ $EXTMAC ] && VETH=`grep "$EXTMAC$" /tmp/netstat-docker-veth-mac |awk '{print $2}'`
 			[ $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
 			[ $SETIFACE ] && LINKUNIT="http://$HOST:3000$SETIFACE"

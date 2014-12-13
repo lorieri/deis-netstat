@@ -10,6 +10,10 @@ netstat -tpano > /tmp/netstat-paas
 for d in `brctl show docker0` ; do echo $d ; done |grep veth > /tmp/netstat-docker-veth
 for d in `cat /tmp/netstat-docker-veth` ; do echo $d `cat /sys/devices/virtual/net/$d/address`; done |grep veth > /tmp/netstat-docker-veth-mac
 
+# get external mac form internal mac
+brctl showmacs docker0 |awk '{print $1 " " $3 " " $2}' |sort > /tmp/netstat-docker-int-ext
+
+
 # get deis services
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services
 
@@ -80,7 +84,9 @@ do
 
 			# get veth name to link to ntopng
 			INTMAC=`docker inspect --format '{{ .NetworkSettings.MacAddress }}' $UNIT`
-			[ $INTMAC ] && VETH=`grep "$INTMAC$" /tmp/netstat-docker-veth-mac |awk '{print $2}'`
+			[ $INTMAC ] && $INTMACINDEX=`grep "$INTMAC" /tmp/netstat-docker-int-ext |awk '{print $1}'`
+			[ $INTMACINDEX ] && $EXTMAC=`grep "$INTMACINDEX yes" |awk '{print $3}'` 
+			[ $EXTMAC ] && VETH=`grep "$EXTMAC$" /tmp/netstat-docker-veth-mac |awk '{print $2}'`
 			[ $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
 			[ $SETIFACE ] && LINKUNIT="http://$HOST:3000$SETIFACE"
 
@@ -95,7 +101,7 @@ do
 
 
 			(
-				echo "{ data: { id: '$HOST', name: '$HOST', fillcolor: 'blue', line: 'red', color: 'white', href: 'http://$HOST:3000' } },";
+				echo "{ data: { id: '$HOST', name: '$HOST', fillcolor: 'blue', line: 'red', color: 'white', href: 'http://$HOST:3000/lua/set_active_interface.lua?id=1' } },";
 				echo "{ data: { id: '$APP', name: '$APP', fillcolor: '#00AAFF', line: '#33CC66', color: '#ff2366', href: '$LINKUNIT' } },";
         	                echo "{ data: { id: '$UNIT', name: '$UNIT' , fillcolor: '#33CC66' , line: '#ff2366', color: '#00AAFF', href: '$LINKUNIT' } },";
 				echo "{ data: { id: '$UNIT-$CONTYPE', name: '$CONTYPE' , fillcolor: '$TYPECOLOR' , line: '$TYPECOLOR', color: 'white', href: '$LINKUNIT' } },";

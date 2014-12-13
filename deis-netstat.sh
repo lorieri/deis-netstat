@@ -9,9 +9,6 @@ netstat -tpano > /tmp/netstat-paas
 # get macadress
 brctl showmacs docker0 |awk '{print $1 " " $3 " " $2}' |sort > /tmp/netstat-docker-macs
 
-# get veth names
-for d in `ls /sys/class/net/|grep veth`; do echo -n "$d  "; cat /sys/class/net/$d/address ; done > /tmp/netstat-veth-mac
-
 # get deis services
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services
 
@@ -82,9 +79,9 @@ do
 
 			# get veth name to link to ntopng
 			INTMAC=`docker inspect --format '{{ .NetworkSettings.MacAddress }}' $UNIT`
-			[ -n $INTMAC ] && INTMACINDEX=`grep $INTMAC /tmp/netstat-docker-macs |awk '{print $1}'`
-			[ -n $INTMACINDEX ] && EXTMAC=`grep "^$INTMACINDEX yes" /tmp/netstat-docker-macs |awk '{print $3}'`
-			[ -n $EXTMAC ] && VETH=`grep "$EXTMAC" /tmp/netstat-veth-mac |awk '{print $1}'`
+			[ $INTMAC ] && INTMACINDEX=`grep $INTMAC /tmp/netstat-docker-macs |awk '{print $1}'`
+			[ $INTMACINDEX ] && EXTMAC=`grep "^$INTMACINDEX no" /tmp/netstat-docker-macs |awk '{print $3}'`
+			[ $EXTMAC ] && VETH=`grep "$EXTMAC" /tmp/netstat-veth-mac |awk '{print $1}'`
 			[ -n $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
 			[ -n $VETH ] && LINKUNIT="http://$HOST:3000$SETIFACE"
 

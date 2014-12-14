@@ -21,7 +21,7 @@
       cy.elements().addClass('faded');
       neighborhood.removeClass('faded');
 
-      if ( this.data('href') != "" {
+      if ( this.data('href') != "" ) {
          try { // your browser may block popups
            window.open( this.data('href') );
          } catch(e){ // fall back on url change

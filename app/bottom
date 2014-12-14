@@ -21,11 +21,13 @@
       cy.elements().addClass('faded');
       neighborhood.removeClass('faded');
 
-      try { // your browser may block popups
-        window.open( this.data('href') );
-      } catch(e){ // fall back on url change
-        window.location.href = this.data('href');
-      }
+      if ( this.data('href') != "" {
+         try { // your browser may block popups
+           window.open( this.data('href') );
+         } catch(e){ // fall back on url change
+           window.location.href = this.data('href');
+         }
+      };
 
     });
     

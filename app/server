@@ -1,0 +1,34 @@
+#!/bin/bash
+/etc/init.d/nginx start
+
+etcdctl --no-sync $ETCD_HOSTS ls /deis-netstat |cut -d/ -f3 > /deis-hosts || exit 1
+
+while true;
+	do
+
+		(
+
+		cat /header;
+		( 
+			for d in `cat /deis-hosts`
+			do
+				/bin/etcdctl --no-sync $ETCD_HOSTS get /deis-netstat/$d/nodes;
+			done
+		) |sort|uniq;
+
+		cat /middle;
+                (
+                        for d in `cat /deis-hosts`
+                        do
+                                /bin/etcdctl --no-sync $ETCD_HOSTS get /deis-netstat/$d/edges;
+                        done
+                ) |sort|uniq;
+
+		cat /bottom;
+
+		) > /usr/share/nginx/www/code_tmp.js
+		mv /usr/share/nginx/www/code_tmp.js /usr/share/nginx/www/code.js
+
+
+		sleep 10
+	done

@@ -1,0 +1,40 @@
+    ]
+  },
+  
+  layout: {
+    name: 'breadthfirst',
+    padding: 10
+  },
+  
+  // on graph initial layout done (could be async depending on layout...)
+  ready: function(){
+    window.cy = this;
+    
+    // giddy up...
+    
+    cy.elements().unselectify();
+    
+    cy.on('tap', 'node', function(e){
+      var node = e.cyTarget; 
+      var neighborhood = node.neighborhood().add(node);
+      
+      cy.elements().addClass('faded');
+      neighborhood.removeClass('faded');
+
+      try { // your browser may block popups
+        window.open( this.data('href') );
+      } catch(e){ // fall back on url change
+        window.location.href = this.data('href');
+      }
+
+    });
+    
+    cy.on('tap', function(e){
+      if( e.cyTarget === cy ){
+        cy.elements().removeClass('faded');
+      }
+    });
+  }
+});
+
+}); // on dom ready

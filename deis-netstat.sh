@@ -6,14 +6,6 @@ source /etc/environment
 # get netstat
 netstat -tpano > /tmp/netstat-paas
 
-# get docker veth
-for d in `brctl show docker0` ; do echo $d ; done |grep veth > /tmp/netstat-docker-veth
-for d in `cat /tmp/netstat-docker-veth` ; do echo $d `cat /sys/devices/virtual/net/$d/address`; done |grep veth > /tmp/netstat-docker-veth-mac
-
-# get external mac form internal mac
-brctl showmacs docker0 |awk '{print $1 " " $3 " " $2}' |sort > /tmp/netstat-docker-int-ext
-
-
 # get deis services
 etcdctl --no-sync ls /deis/services > /tmp/netstat-services
 
@@ -23,9 +15,6 @@ for d in `etcdctl --no-sync ls /deis-netstat/`;
 do
 	etcdctl --no-sync get /deis/router/hosts/`echo $d|cut -d/ -f3`|| etcdctl --no-sync rm $d --recursive;
 done
-
-# get ntopng interfaces index
-curl -s --max-time 1 http://localhost:3000/lua/about.lua |grep set_active_interface.lua|sed 's/.*<li><a href="//'|sed 's/<\/li>//'|sed 's/">/\ /'|sed 's/<\/a>//' > /tmp/netstat-ntop-ifaces
 
 # clean files
 echo  > /tmp/netstat-paas-edges-json
@@ -83,14 +72,17 @@ do
 
 
 			# get veth name to link to ntopng
-			INTMAC=`docker inspect --format '{{ .NetworkSettings.MacAddress }}' $UNIT`
-			[ $INTMAC ] && INTMACINDEX=`grep "$INTMAC" /tmp/netstat-docker-int-ext |awk '{print $1}'`
-			[ $INTMACINDEX ] && EXTMAC=`grep "$INTMACINDEX yes" /tmp/netstat-docker-int-ext |awk '{print $3}'` 
-			[ $EXTMAC ] && VETH=`grep "$EXTMAC$" /tmp/netstat-docker-veth-mac |awk '{print $1}'`
-			[ $VETH ] && SETIFACE=`grep "$VETH" /tmp/netstat-ntop-ifaces |awk '{print $1}'`
-			[ $SETIFACE ] && LINKUNIT="http://$HOST:3000$SETIFACE"
+			IP=`echo $IPPORT|cut -d: -f1`
+			PORT=`echo $IPPORT|cut -d: -f2`
+			LINKUNIT="http://$HOST:3000/lua/port_details.lua?port=$PORT"
+			LINKUNITIP="http://$HOST:3000/lua/host_details.lua?host=$IP"
+
+			
 
 			# { data: { id: 'j', name: 'Jerry' } },
+			# /lua/port_details.lua?port=44408
+			# /lua/host_details.lua?host=172.17.0.68
+
 			(
 				echo $EDGE_HOST;
 				echo $EDGE_APP;
@@ -101,8 +93,8 @@ do
 
 
 			(
-				echo "{ data: { id: '$HOST', name: '$HOST', fillcolor: 'blue', line: 'red', color: 'white', href: 'http://$HOST:3000/lua/set_active_interface.lua?id=1' } },";
-				echo "{ data: { id: '$APP', name: '$APP', fillcolor: '#00AAFF', line: '#33CC66', color: '#ff2366', href: '$LINKUNIT' } },";
+				echo "{ data: { id: '$HOST', name: '$HOST', fillcolor: 'blue', line: 'red', color: 'white', href: 'http://$HOST:3000/?page=TopPorts' } },";
+				echo "{ data: { id: '$APP', name: '$APP', fillcolor: '#00AAFF', line: '#33CC66', color: '#ff2366', href: '$LINKUNITIP' } },";
         	                echo "{ data: { id: '$UNIT', name: '$UNIT' , fillcolor: '#33CC66' , line: '#ff2366', color: '#00AAFF', href: '$LINKUNIT' } },";
 				echo "{ data: { id: '$UNIT-$CONTYPE', name: '$CONTYPE' , fillcolor: '$TYPECOLOR' , line: '$TYPECOLOR', color: 'white', href: '$LINKUNIT' } },";
                         	echo "{ data: { id: '$UNIT-$CONTYPE-$CONQT', name : '$CONQT' , fillcolor : '$CONCOLOR' , line : '#888', color : 'white', href: '$LINKUNIT' } },"

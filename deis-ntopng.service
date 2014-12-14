@@ -1,0 +1,19 @@
+[Unit]
+Description=deis-ntopng
+Requires=docker.socket etcd.service
+After=docker.socket etcd.service
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStartPre=/bin/sh -c "docker pull lorieri/deis-ntopng:latest"
+ExecStartPre=/bin/sh -c "docker inspect deis-ntopng >/dev/null && docker rm -f deis-ntopng || true"
+ExecStart=/bin/sh -c "docker run --name deis-ntopng --rm -m 128m -c 100 --net=host lorieri/deis-ntopng:latest"
+ExecStopPost=/usr/bin/docker rm -f deis-ntopng
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+Global=true

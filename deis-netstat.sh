@@ -75,8 +75,9 @@ do
 			# get veth name to link to ntopng
 			IP=`echo $IPPORT|cut -d: -f1`
 			PORT=`echo $IPPORT|cut -d: -f2`
+                        INTIP=`docker inspect -f '{{.NetworkSettings.IPAddress}}' $UNIT`
 			LINKUNIT="http://$HOST:3000/lua/port_details.lua?port=$PORT"
-			LINKUNITIP="http://$HOST:3000/lua/host_details.lua?host=$IP"
+			LINKUNITIP="http://$HOST:3000/lua/host_details.lua?host=$INTIP"
 
 
 

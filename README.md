@@ -1,3 +1,7 @@
+# Did you try this ?
+
+Consider weave scope: https://github.com/weaveworks/scope
+
 # New
 
  * shellcheck
